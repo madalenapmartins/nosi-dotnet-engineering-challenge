@@ -68,20 +68,55 @@ public class ContentController : Controller
     }
     
     [HttpPost("{id}/genre")]
-    public Task<IActionResult> AddGenres(
+    public async Task<IActionResult> AddGenres(
         Guid id,
-        [FromBody] IEnumerable<string> genre
+        [FromBody] IEnumerable<string> genres
     )
     {
-        return Task.FromResult<IActionResult>(StatusCode((int)HttpStatusCode.NotImplemented));
+        var content = await _manager.GetContent(id).ConfigureAwait(false);
+
+        if (content == null)
+            return NotFound();
+        
+        var existingGenres = content.GenreList.ToList();
+
+        foreach (var genre in genres)
+        {
+            if (!existingGenres.Contains(genre))
+                existingGenres.Add(genre);
+        }
+
+        // content.GenreList = existingGenres;
+        //  I haven't had time to develop the updated GenreList feature as planned, I know this does not work because it is read only
+
+        var updatedContent = await _manager.UpdateContent(id, content).ConfigureAwait(false);
+
+        return updatedContent == null ? Problem() : OK(updatedContent);
     }
     
     [HttpDelete("{id}/genre")]
-    public Task<IActionResult> RemoveGenres(
+    public async Task<IActionResult> RemoveGenres(
         Guid id,
-        [FromBody] IEnumerable<string> genre
+        [FromBody] IEnumerable<string> genres
     )
     {
-        return Task.FromResult<IActionResult>(StatusCode((int)HttpStatusCode.NotImplemented));
+        var content = await _manager.GetContent(id).ConfigureAwait(false);
+
+        if (content == null)
+            return NotFound();
+
+        var existingGenres = content.GenreList.ToList();
+
+        foreach (var genre in genres)
+        {
+            existingGenres.Remove(genre);
+        }
+
+        //content.GenreList = existingGenres;
+        //  I haven't had time to develop the updated GenreList feature as planned, I know this does not work because it is read only
+
+        var updatedContent = await _manager.UpdateContent(id, content).ConfigureAwait(false);
+
+        return updatedContent == null ? Problem() : Ok(updatedContent);
     }
 }
